@@ -1,0 +1,4 @@
+parameters:
+- name: 'vmImage'
+  default: 'ubuntu 16.04'
+  type: string
