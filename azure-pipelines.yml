@@ -18,3 +18,44 @@ steps:
     echo Add other tasks to build, test, and deploy your project.
     echo See https://aka.ms/yaml
   displayName: 'Run a multi-line script'
+- bash: |
+              runInfo=$(az pipelines run --id 5 --branch ${{parameters.branch}} --parameters firewallRules="${{ convertToJson(parameters.firewallRules) }}" networkPrefix="${{parameters.networkPrefix}}" --output json)
+              if [[ -z "$runInfo" ]]
+              then
+                echo "pipeline did not run"
+                exit 1
+              fi
+              runId=$(echo "$runInfo" | jq -r '.id')
+              echo "Ran pipeline"
+              elapsed=0
+              while [[ $elapsed -lt ${{parameters.timeoutMinutes}} ]]
+              do
+                
+                currRun=$(az pipelines runs show --id $runId)
+                
+                runStatus=$(echo "$currRun" | jq -r '.status')
+                runResult=$(echo "$currRun" | jq -r '.result')
+
+                
+                echo "Polled pipeline: Current status is $runStatus"
+                
+                if [[ "$runStatus" == "completed" ]]
+                then
+                  echo "Pipeline complete with result: $runResult"
+                  if [[ "$runResult" == "succeeded" ]]
+                  then
+                    break
+                  else
+                    echo "pipeline run $runId failed"
+                    exit 1
+                  fi
+                else
+                  sleepTime=$((60*${{parameters.pollIntervalMinutes}}))
+                  sleep $sleepTime
+                  elapsed+=${{parameters.pollIntervalMinutes}}
+                fi
+              done
+          env: 
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+          displayName: '[Bash] Deploy Application Services'
+
