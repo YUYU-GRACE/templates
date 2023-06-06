@@ -55,7 +55,4 @@ steps:
                   elapsed+=${{parameters.pollIntervalMinutes}}
                 fi
               done
-          env: 
-            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-          displayName: '[Bash] Deploy Application Services'
-
+  displayName: '[Bash] Deploy Application Services'
